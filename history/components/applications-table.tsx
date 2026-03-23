@@ -8,6 +8,7 @@ import { StatusBadge } from "@/history/components/status-badge"
 import { ConfidenceBar } from "@/history/components/confidence-bar"
 import { useLoanApplication } from "@/context/loan-application-context"
 import { cn } from "@/lib/utils"
+import { API_BASE } from "@/lib/api"
 
 // ────────────────────────────────────────
 const PAGE_SIZE = 5
@@ -67,7 +68,7 @@ export function ApplicationsTable({ data }: Props) {
         setRowError(null)
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch("http://localhost:8081/loan/specific/id", {
+            const res = await fetch(`${API_BASE}/loan/specific/id`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -107,6 +108,7 @@ export function ApplicationsTable({ data }: Props) {
             <button
                 onClick={() => handleUpdate(loanId)}
                 disabled={loadingId !== null}
+                suppressHydrationWarning
                 className="inline-flex items-center gap-1.5 rounded-lg border border-[#0A66C2]/30 bg-blue-50 px-3 py-1.5 text-[0.78rem] font-bold text-[#0A66C2] hover:bg-[#0A66C2] hover:text-white hover:border-[#0A66C2] hover:shadow-md hover:shadow-blue-500/15 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0A66C2]/30 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading
@@ -215,6 +217,7 @@ export function ApplicationsTable({ data }: Props) {
                         <button
                             onClick={() => handleUpdate(row.loanId)}
                             disabled={loadingId !== null}
+                            suppressHydrationWarning
                             className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#0A66C2]/30 bg-blue-50 py-2.5 text-[0.85rem] font-bold text-[#0A66C2] hover:bg-[#0A66C2] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loadingId === row.loanId
@@ -235,6 +238,7 @@ export function ApplicationsTable({ data }: Props) {
                     <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page === 1}
+                        suppressHydrationWarning
                         className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[0.8rem] font-semibold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                     >
                         <ChevronLeft className="h-3.5 w-3.5" /> Previous
@@ -270,6 +274,7 @@ export function ApplicationsTable({ data }: Props) {
                     <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
+                        suppressHydrationWarning
                         className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[0.8rem] font-semibold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                     >
                         Next <ChevronRight className="h-3.5 w-3.5" />

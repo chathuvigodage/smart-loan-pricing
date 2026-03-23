@@ -7,6 +7,7 @@ import { ShieldCheck, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Button } from "@/shared/components/ui/button"
+import { API_BASE } from "@/lib/api"
 
 export default function LoginPage() {
     const router = useRouter()
@@ -47,7 +48,7 @@ export default function LoginPage() {
         setIsSubmitting(true)
         setIsSuccess(false)
         try {
-            const response = await fetch("http://localhost:8081/user/login", {
+            const response = await fetch(`${API_BASE}/user/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

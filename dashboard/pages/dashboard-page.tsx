@@ -8,6 +8,7 @@ import { PricingInsights } from "@/dashboard/components/pricing-insights"
 import { SkeletonStatCard, SkeletonChart, SkeletonTable } from "@/dashboard/components/skeletons"
 import { Button } from "@/shared/components/ui/button"
 import { Download, AlertCircle } from "lucide-react"
+import { API_BASE } from "@/lib/api"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface DashboardData {
@@ -36,7 +37,7 @@ export default function DashboardPage() {
         setDashError(null)
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch("http://localhost:8081/user/dashboard", {
+            const res = await fetch(`${API_BASE}/user/dashboard`, {
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -67,7 +68,7 @@ export default function DashboardPage() {
         setExportError(null)
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch("http://localhost:8081/user/dashboard/export", {
+            const res = await fetch(`${API_BASE}/user/dashboard/export`, {
                 method: "GET",
                 headers: { Authorization: `Bearer ${token}` },
             })

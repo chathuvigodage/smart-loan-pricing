@@ -7,6 +7,7 @@ import { ApplicationsTable } from "@/history/components/applications-table"
 import { LoanHistoryResponse, LoanListResponse } from "@/lib/mock-data/applicationHistoryMocks"
 import { PageHeader } from "@/shared/components/layout/page-header"
 import { Loader2, AlertCircle } from "lucide-react"
+import { API_BASE } from "@/lib/api"
 
 type AppStatus = "All" | string
 
@@ -23,7 +24,7 @@ export default function ApplicationHistoryPage() {
         const fetchHistory = async () => {
             try {
                 const token = localStorage.getItem("token")
-                const res = await fetch("http://localhost:8081/loan/history", {
+                const res = await fetch(`${API_BASE}/loan/history`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -65,10 +66,10 @@ export default function ApplicationHistoryPage() {
         return list.filter(r => {
             const matchesSearch =
                 !search ||
-                r.customerName.toLowerCase().includes(search.toLowerCase()) ||
-                r.loanId.toLowerCase().includes(search.toLowerCase())
+                (r.customerName ?? "").toLowerCase().includes(search.toLowerCase()) ||
+                (r.loanId ?? "").toLowerCase().includes(search.toLowerCase())
             const matchesStatus =
-                status === "All" || r.status.toLowerCase() === status.toLowerCase()
+                status === "All" || (r.status ?? "").toLowerCase() === status.toLowerCase()
             return matchesSearch && matchesStatus
         })
     }, [data, search, status])

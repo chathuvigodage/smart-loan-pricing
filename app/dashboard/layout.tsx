@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { DashboardLayout } from "@/dashboard/layout/dashboard-layout"
 import { ProfileData } from "@/dashboard/layout/sidebar"
+import { API_BASE } from "@/lib/api"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     const [profile, setProfile] = useState<ProfileData | null>(null)
@@ -11,7 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         const load = async () => {
             try {
                 const token = localStorage.getItem("token")
-                const res = await fetch("http://localhost:8081/user/profile", {
+                const res = await fetch(`${API_BASE}/user/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 const json = await res.json()

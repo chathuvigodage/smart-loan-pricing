@@ -10,6 +10,7 @@ import { Button } from "@/shared/components/ui/button"
 import { PageHeader } from "@/shared/components/layout/page-header"
 import { useLoanApplication } from "@/context/loan-application-context"
 import { cn } from "@/lib/utils"
+import { API_BASE } from "@/lib/api"
 
 // ── Fallback shown when page is visited directly without context data ────────
 const fallbackData = {
@@ -58,7 +59,7 @@ export default function CustomerResponsePage() {
         setPageState("submitting")
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch("http://localhost:8081/loan/feedback", {
+            const res = await fetch(`${API_BASE}/loan/feedback`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

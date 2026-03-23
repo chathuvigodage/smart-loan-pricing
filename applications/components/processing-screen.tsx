@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react"
 import { Shield, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLoanApplication } from "@/context/loan-application-context"
+import { API_BASE } from "@/lib/api"
 
 const MESSAGES = [
     "Analyzing applicant credit profile...",
@@ -82,7 +83,7 @@ export function ProcessingScreen() {
             ? localStorage.getItem("token")
             : null
 
-        fetch("http://localhost:8081/loan/send-details", {
+        fetch(`${API_BASE}/loan/send-details`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

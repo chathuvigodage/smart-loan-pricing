@@ -27,6 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     ref={ref}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
+                    suppressHydrationWarning
                     {...props}
                 />
                 {isPassword && !error && (
