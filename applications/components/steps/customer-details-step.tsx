@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import { MapPin } from "lucide-react"
 import { CustomerDetails } from "@/types/application"
 import { FormField, baseInputClass, baseSelectClass, errorInputClass } from "@/applications/components/ui/form-field"
 import { cn } from "@/lib/utils"
@@ -16,12 +15,24 @@ interface CustomerDetailsStepProps {
 }
 
 const EMPLOYMENT_TYPES = [
-    "Salaried Employee",
-    "Self-Employed / Business Owner",
-    "Freelancer / Contractor",
-    "Government / Public Sector",
-    "Retired",
+    "Employed",
+    "Self-Employed",
     "Unemployed",
+]
+
+const EDUCATION_LEVELS = [
+    "High School",
+    "Bachelor",
+    "Master",
+    "Associate",
+    "Doctorate",
+]
+
+const MARITAL_STATUSES = [
+    "Single",
+    "Married",
+    "Divorced",
+    "Widowed",
 ]
 
 export function CustomerDetailsStep({ data, errors, onChange, onBlur }: CustomerDetailsStepProps) {
@@ -89,6 +100,45 @@ export function CustomerDetailsStep({ data, errors, onChange, onBlur }: Customer
                     </FormField>
                 </div>
 
+                {/* Education + Marital Status */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <FormField label="Education Level" htmlFor="educationLevel" error={errors.educationLevel}>
+                        <div className="relative">
+                            <select
+                                id="educationLevel"
+                                name="educationLevel"
+                                value={data.educationLevel ?? ""}
+                                onChange={e => onChange("educationLevel", e.target.value)}
+                                onBlur={() => onBlur("educationLevel")}
+                                className={cn(baseSelectClass, errors.educationLevel && errorInputClass)}
+                            >
+                                <option value="" disabled>Select education level</option>
+                                {EDUCATION_LEVELS.map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </FormField>
+
+                    <FormField label="Marital Status" htmlFor="maritalStatus" error={errors.maritalStatus}>
+                        <div className="relative">
+                            <select
+                                id="maritalStatus"
+                                name="maritalStatus"
+                                value={data.maritalStatus ?? ""}
+                                onChange={e => onChange("maritalStatus", e.target.value)}
+                                onBlur={() => onBlur("maritalStatus")}
+                                className={cn(baseSelectClass, errors.maritalStatus && errorInputClass)}
+                            >
+                                <option value="" disabled>Select marital status</option>
+                                {MARITAL_STATUSES.map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </FormField>
+                </div>
+
                 {/* Annual Income */}
                 <FormField label="Annual Income" htmlFor="annualIncome" error={errors.annualIncome} hint="Enter your gross annual income in USD" required>
                     <div className="relative">
@@ -104,24 +154,6 @@ export function CustomerDetailsStep({ data, errors, onChange, onBlur }: Customer
                             onBlur={() => onBlur("annualIncome")}
                             aria-invalid={!!errors.annualIncome}
                             className={cn(baseInputClass, "pl-7", errors.annualIncome && errorInputClass)}
-                        />
-                    </div>
-                </FormField>
-
-                {/* Residential Location */}
-                <FormField label="Residential Location" htmlFor="residentialLocation" error={errors.residentialLocation} required>
-                    <div className="relative">
-                        <MapPin className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <input
-                            id="residentialLocation"
-                            name="residentialLocation"
-                            type="text"
-                            placeholder="Enter your city or address"
-                            value={data.residentialLocation ?? ""}
-                            onChange={e => onChange("residentialLocation", e.target.value)}
-                            onBlur={() => onBlur("residentialLocation")}
-                            aria-invalid={!!errors.residentialLocation}
-                            className={cn(baseInputClass, "pl-10", errors.residentialLocation && errorInputClass)}
                         />
                     </div>
                 </FormField>

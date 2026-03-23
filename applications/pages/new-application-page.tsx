@@ -7,6 +7,7 @@ import { ProcessingScreen } from "@/applications/components/processing-screen"
 import { StepIndicator } from "@/applications/components/ui/step-indicator"
 import { Button } from "@/shared/components/ui/button"
 import { CustomerDetails, LoanDetails } from "@/types/application"
+import { useLoanApplication } from "@/context/loan-application-context"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 
 // ─────────────────────── Validators ──────────────────────────
@@ -19,7 +20,6 @@ const validateCustomer = (d: Partial<CustomerDetails>) => {
     if (!d.employmentType) errors.employmentType = "Please select an employment type"
     if (!d.annualIncome) errors.annualIncome = "Annual income is required"
     else if (isNaN(Number(d.annualIncome))) errors.annualIncome = "Enter a valid numeric value"
-    if (!d.residentialLocation?.trim()) errors.residentialLocation = "Location is required"
     return errors
 }
 
@@ -37,18 +37,17 @@ const validateLoan = (d: Partial<LoanDetails>) => {
 // ─────────────────────────────────────────────────────────────
 
 export default function NewApplicationPage() {
+    const { customerData, setCustomerData, loanData, setLoanData } = useLoanApplication()
+
     // Step state: 1 | 2 | "processing"
     const [step, setStep] = useState<1 | 2 | "processing">(1)
 
-    const [customerData, setCustomerData] = useState<Partial<CustomerDetails>>({})
     const [customerErrors, setCustomerErrors] = useState<Partial<Record<keyof CustomerDetails, string>>>({})
-
-    const [loanData, setLoanData] = useState<Partial<LoanDetails>>({ loanDuration: "12 Months" })
     const [loanErrors, setLoanErrors] = useState<Partial<Record<keyof LoanDetails, string>>>({})
 
     // ── Customer field handlers
     const handleCustomerChange = (field: keyof CustomerDetails, value: string) => {
-        setCustomerData(p => ({ ...p, [field]: value }))
+        setCustomerData({ ...customerData, [field]: value })
         if (customerErrors[field]) setCustomerErrors(p => ({ ...p, [field]: undefined }))
     }
     const handleCustomerBlur = (field: keyof CustomerDetails) => {
@@ -58,7 +57,7 @@ export default function NewApplicationPage() {
 
     // ── Loan field handlers
     const handleLoanChange = (field: keyof LoanDetails, value: string) => {
-        setLoanData(p => ({ ...p, [field]: value }))
+        setLoanData({ ...loanData, [field]: value })
         if (loanErrors[field]) setLoanErrors(p => ({ ...p, [field]: undefined }))
     }
     const handleLoanBlur = (field: keyof LoanDetails) => {
@@ -85,12 +84,11 @@ export default function NewApplicationPage() {
         if (step === 2) setStep(1)
     }
 
-    // ── Show processing screen (full-page overlay)
+    // ── Show processing screen (full-page overlay, fires API call)
     if (step === "processing") return <ProcessingScreen />
 
     return (
         <div className="flex min-h-screen bg-[#F8F9FB] font-sans">
-            {/* Sidebar - simplified top brand bar for this flow */}
             <div className="flex flex-1 flex-col">
                 {/* Top App Bar */}
                 <div className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md px-6 sm:px-10">
@@ -156,7 +154,7 @@ export default function NewApplicationPage() {
                                 {step === 1 ? (
                                     <>Next <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" /></>
                                 ) : (
-                                    <>Continue to Documents <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" /></>
+                                    <>Submit Application <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" /></>
                                 )}
                             </Button>
                         </div>

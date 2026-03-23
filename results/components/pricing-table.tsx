@@ -1,18 +1,18 @@
 import React from "react"
 import { cn } from "@/lib/utils"
-import { PricingOption } from "@/lib/mock-data/resultMocks"
+import { LoanRateOption } from "@/types/application"
 import { Star } from "lucide-react"
 
 interface PricingTableProps {
-    options: PricingOption[]
-    onSelect?: (option: PricingOption) => void
-    selectedRate?: number
+    options: LoanRateOption[]
+    onSelect?: (option: LoanRateOption) => void
+    selectedRate?: string
 }
 
 export function PricingTable({ options, onSelect, selectedRate }: PricingTableProps) {
     return (
         <div className="flex flex-col space-y-4">
-            <h3 className="text-[1.15rem] font-bold text-slate-800 tracking-tight">Alternative Pricing Options</h3>
+            <h3 className="text-[1.15rem] font-bold text-slate-800 tracking-tight">Pricing Options</h3>
 
             <div className="rounded-2xl bg-white border border-slate-200/70 shadow-sm overflow-hidden">
                 {/* Table Header */}
@@ -25,8 +25,12 @@ export function PricingTable({ options, onSelect, selectedRate }: PricingTablePr
                 {/* Rows */}
                 <div className="divide-y divide-slate-100/80">
                     {options.map((opt, idx) => {
-                        const isRecommended = opt.status === "recommended"
-                        const isSelected = selectedRate === opt.interestRate
+                        const isRecommended = opt.status === "Recommended"
+                        const isSelected = selectedRate === opt.rate
+                        const rateDisplay = parseFloat(opt.rate).toFixed(2)
+                        const profitDisplay = parseFloat(opt.profit).toLocaleString()
+                        const probabilityDisplay = parseFloat(opt.probability_rate)
+
                         return (
                             <button
                                 key={idx}
@@ -44,26 +48,26 @@ export function PricingTable({ options, onSelect, selectedRate }: PricingTablePr
                                     "text-[0.95rem] font-bold transition-colors",
                                     isRecommended ? "text-[#0A66C2]" : "text-slate-800 group-hover:text-[#0A66C2]"
                                 )}>
-                                    {opt.interestRate.toFixed(1)}%
+                                    {rateDisplay}%
                                 </span>
 
                                 {/* Acceptance Prob */}
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[0.875rem] font-semibold text-slate-700">{opt.acceptanceProbability}%</span>
+                                    <span className="text-[0.875rem] font-semibold text-slate-700">{probabilityDisplay}%</span>
                                     <div className="h-1.5 w-full max-w-[80px] rounded-full bg-slate-100 overflow-hidden">
                                         <div
                                             className={cn(
                                                 "h-full rounded-full transition-all duration-500",
-                                                opt.acceptanceProbability >= 70 ? "bg-emerald-500" : opt.acceptanceProbability >= 60 ? "bg-amber-400" : "bg-rose-400"
+                                                probabilityDisplay >= 70 ? "bg-emerald-500" : probabilityDisplay >= 60 ? "bg-amber-400" : "bg-rose-400"
                                             )}
-                                            style={{ width: `${opt.acceptanceProbability}%` }}
+                                            style={{ width: `${probabilityDisplay}%` }}
                                         />
                                     </div>
                                 </div>
 
                                 {/* Expected Profit */}
                                 <span className="text-[0.875rem] font-semibold text-slate-700">
-                                    {opt.currency} {opt.expectedProfit.toLocaleString()}
+                                    Rs. {profitDisplay}
                                 </span>
 
                                 {/* Status Badge */}

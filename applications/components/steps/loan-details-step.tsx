@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { CreditCard, BarChart2, Percent, ArrowLeft, MessageCircle } from "lucide-react"
+import { CreditCard, BarChart2, Percent, ArrowLeft, MessageCircle, Wallet } from "lucide-react"
 import { LoanDetails } from "@/types/application"
 import { FormField, baseInputClass, baseSelectClass, errorInputClass } from "@/applications/components/ui/form-field"
 import { CurrencyInput, PercentageInput } from "@/applications/components/ui/currency-input"
@@ -69,6 +69,41 @@ export function LoanDetailsStep({ data, errors, onChange, onBlur }: LoanDetailsS
                             >
                                 {LOAN_DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
+                        </FormField>
+                    </div>
+                </SectionCard>
+
+                {/* Financial Assessment */}
+                <SectionCard icon={Wallet} title="Financial Assessment">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        <FormField label="Savings Account Balance" htmlFor="savingsBalance" error={errors.savingsBalance}>
+                            <CurrencyInput
+                                id="savingsBalance"
+                                name="savingsBalance"
+                                value={data.savingsBalance ?? ""}
+                                onChange={v => onChange("savingsBalance", v)}
+                                onBlur={() => onBlur("savingsBalance")}
+                                hasError={!!errors.savingsBalance}
+                            />
+                        </FormField>
+                        <FormField label="Total Liabilities" htmlFor="totalLiabilities" error={errors.totalLiabilities}>
+                            <CurrencyInput
+                                id="totalLiabilities"
+                                name="totalLiabilities"
+                                value={data.totalLiabilities ?? ""}
+                                onChange={v => onChange("totalLiabilities", v)}
+                                onBlur={() => onBlur("totalLiabilities")}
+                                hasError={!!errors.totalLiabilities}
+                            />
+                        </FormField>
+                        <FormField label="Total Debt to Income Ratio" htmlFor="dtiRatio" error={errors.dtiRatio} hint="Percentage (%)">
+                            <PercentageInput
+                                id="dtiRatio"
+                                name="dtiRatio"
+                                value={data.dtiRatio ?? ""}
+                                onChange={v => onChange("dtiRatio", v)}
+                                placeholder="0.00"
+                            />
                         </FormField>
                     </div>
                 </SectionCard>

@@ -1,5 +1,22 @@
 export type AppStatus = "Accepted" | "Rejected" | "Pending" | "Conditional"
 
+// ── API response types ─────────────────────────────────────────────────────
+export interface LoanListResponse {
+    loanId: string
+    customerName: string
+    createdAt: string
+    offeredRate: string
+    confidence: string
+    status: string
+}
+
+export interface LoanHistoryResponse {
+    loanListResponse: LoanListResponse[]
+    noOfApplications: string
+    avgAcceptance: string
+    avgRejection: string
+}
+
 export interface ApplicationRecord {
     id: string
     applicationId: string

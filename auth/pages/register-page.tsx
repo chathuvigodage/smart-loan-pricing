@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Shield, ChevronDown, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Button } from "@/shared/components/ui/button"
 
 export default function RegisterPage() {
+    const router = useRouter()
     const [fullName, setFullName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -77,6 +79,40 @@ export default function RegisterPage() {
     const handleEmailBlur = () => setEmailError(validateEmail(email))
     const handlePasswordBlur = () => setPasswordError(validatePassword(password))
 
+    const registerUser = async () => {
+        setIsSubmitting(true)
+        setIsSuccess(false)
+        try {
+            const response = await fetch("http://localhost:8081/user/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username: fullName,
+                    email: email,
+                    password: password,
+                    role: "User"
+                })
+            })
+            const data = await response.json()
+
+            if (data.code === "200") {
+                localStorage.setItem("token", data.data.token)
+                localStorage.setItem("username", fullName)
+                setIsSuccess(true)
+                router.push("/dashboard")
+            } else {
+                alert(data.message)
+            }
+        } catch (error: any) {
+            console.error("Registration failed:", error)
+            alert("An error occurred: " + (error?.message || "Unknown error") + ". Please check console for details.")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const nError = validateFullName(fullName)
@@ -84,11 +120,8 @@ export default function RegisterPage() {
         const pError = validatePassword(password)
         setFullNameError(nError); setEmailError(eError); setPasswordError(pError)
         if (nError || eError || pError) { setIsValid(false); return }
-        setIsSubmitting(true)
-        setTimeout(() => {
-            setIsSubmitting(false); setIsSuccess(true)
-            setTimeout(() => setIsSuccess(false), 3000)
-        }, 1500)
+
+        registerUser()
     }
 
     return (
@@ -139,7 +172,7 @@ export default function RegisterPage() {
 
                     <form className="space-y-5" onSubmit={handleSubmit} noValidate>
                         <div className="space-y-1.5">
-                            <Label htmlFor="fullName">Full Name</Label>
+                            <Label htmlFor="fullName">Userame</Label>
                             <Input id="fullName" name="fullName" type="text" placeholder="e.g. Jane Doe" autoComplete="name" required
                                 value={fullName} onChange={e => { setFullName(e.target.value); if (fullNameError) setFullNameError("") }}
                                 onBlur={handleNameBlur} error={fullNameError} disabled={isSubmitting || isSuccess} />

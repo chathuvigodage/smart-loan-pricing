@@ -8,10 +8,11 @@ import { DecisionSelector } from "@/customer-response/components/decision-select
 import { SuccessToast } from "@/customer-response/components/success-toast"
 import { Button } from "@/shared/components/ui/button"
 import { PageHeader } from "@/shared/components/layout/page-header"
+import { useLoanApplication } from "@/context/loan-application-context"
 import { cn } from "@/lib/utils"
 
-// ── Mock data (replace with API call later)
-const mockData = {
+// ── Fallback shown when page is visited directly without context data ────────
+const fallbackData = {
     applicationId: "APP-12345-CDE",
     displayId: "#12345",
     customerName: "Jane Doe",
@@ -19,7 +20,6 @@ const mockData = {
     interestRate: "7.99%",
     term: "60 Months",
     monthlyPayment: "$507.23",
-    totalCost: "$30,433.80",
 }
 
 const JOURNEY_STEPS = ["Applied", "Pricing Done", "Offer Sent", "Decision"]
@@ -28,21 +28,65 @@ type DecisionType = "accepted" | "rejected" | null
 type PageState = "form" | "submitting" | "done-accepted" | "done-rejected"
 
 export default function CustomerResponsePage() {
+    const { loanDetail } = useLoanApplication()
+
+    // Prefer live context data; fall back to mock if navigated directly
+    const liveData = loanDetail
+        ? {
+            applicationId: loanDetail.applicationId,
+            displayId:     `#${loanDetail.applicationId}`,
+            customerName:  loanDetail.customerName  || "—",
+            loanAmount:    loanDetail.loanAmount     || "—",
+            interestRate:  loanDetail.interestRate   || "—",
+            term:          loanDetail.term           || "—",
+            monthlyPayment: loanDetail.monthlyPayment || "—",
+        }
+        : fallbackData
+
     const [decision, setDecision] = useState<DecisionType>(null)
     const [rejectionReason, setRejectionReason] = useState("")
     const [pageState, setPageState] = useState<PageState>("form")
     const [showToast, setShowToast] = useState(false)
+    const [apiError, setApiError] = useState<string | null>(null)
 
     const canSubmit = decision !== null
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!canSubmit) return
+        setApiError(null)
         setPageState("submitting")
-        // Simulate API call
-        await new Promise(r => setTimeout(r, 1600))
-        setPageState(decision === "accepted" ? "done-accepted" : "done-rejected")
-        setShowToast(true)
+        try {
+            const token = localStorage.getItem("token")
+            const res = await fetch("http://localhost:8081/loan/feedback", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    applicationId: liveData.applicationId,
+                    isAccepted:    decision === "accepted",
+                    reason:        decision === "rejected" && rejectionReason.trim()
+                                       ? rejectionReason.trim()
+                                       : null,
+                }),
+            })
+
+            const json = await res.json()
+
+            if (json?.code === "200" || res.ok) {
+                setPageState(decision === "accepted" ? "done-accepted" : "done-rejected")
+                setShowToast(true)
+            } else {
+                const msg = json?.message ?? json?.error ?? "Failed to submit customer response. Please try again."
+                setApiError(msg)
+                setPageState("form")
+            }
+        } catch {
+            setApiError("Failed to submit customer response. Please try again.")
+            setPageState("form")
+        }
     }
 
     // ──────────── Final Decision Screens ────────────
@@ -69,8 +113,8 @@ export default function CustomerResponsePage() {
                     </h1>
                     <p className="mt-3 max-w-md text-[0.975rem] font-medium text-slate-500 animate-in fade-in duration-500 delay-200 fill-mode-both">
                         {isAccepted
-                            ? `The customer has accepted the loan offer for Application ${mockData.displayId}. The decision has been recorded and will update the pricing model.`
-                            : `The customer has declined the offer for Application ${mockData.displayId}. ${rejectionReason ? `Reason: "${rejectionReason}"` : "No reason provided."}`
+                            ? `The customer has accepted the loan offer for Application ${liveData.displayId}. The decision has been recorded and will update the pricing model.`
+                            : `The customer has declined the offer for Application ${liveData.displayId}. ${rejectionReason ? `Reason: "${rejectionReason}"` : "No reason provided."}`
                         }
                     </p>
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-3 animate-in fade-in duration-500 delay-300 fill-mode-both">
@@ -84,7 +128,7 @@ export default function CustomerResponsePage() {
                         </Link>
                     </div>
                 </main>
-                {showToast && <SuccessToast applicationId={mockData.displayId} onClose={() => setShowToast(false)} />}
+                {showToast && <SuccessToast applicationId={liveData.displayId} onClose={() => setShowToast(false)} />}
             </div>
         )
     }
@@ -109,7 +153,7 @@ export default function CustomerResponsePage() {
                     </h1>
                     <p className="mt-1.5 text-[0.9rem] font-medium text-slate-500">
                         Record feedback for Application{" "}
-                        <span className="font-bold text-[#0A66C2]">{mockData.displayId}</span>{" "}
+                        <span className="font-bold text-[#0A66C2]">{liveData.displayId}</span>{" "}
                         to update the pricing model.
                     </p>
                 </div>
@@ -145,18 +189,27 @@ export default function CustomerResponsePage() {
                     </div>
                 </div>
 
+                {/* Error banner */}
+                {apiError && (
+                    <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
+                        <svg className="h-4 w-4 flex-shrink-0 text-rose-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        <p className="flex-1 text-[0.82rem] font-medium text-rose-700">{apiError}</p>
+                        <button onClick={() => setApiError(null)} className="text-[0.75rem] font-bold text-rose-400 hover:text-rose-600">✕</button>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 ease-out fill-mode-both">
                     {/* Offer Details */}
                     <OfferDetailsSection
                         customerRows={[
-                            { label: "Customer Name", value: mockData.customerName },
-                            { label: "Application ID", value: mockData.applicationId },
+                            { label: "Customer Name",   value: liveData.customerName },
+                            { label: "Application ID",  value: liveData.applicationId },
                         ]}
                         loanRows={[
-                            { label: "Loan Amount", value: mockData.loanAmount },
-                            { label: "Interest Rate (APR)", value: mockData.interestRate },
-                            { label: "Term", value: mockData.term },
-                            { label: "Monthly Payment", value: mockData.monthlyPayment },
+                            { label: "Loan Amount",        value: liveData.loanAmount },
+                            { label: "Interest Rate (APR)", value: liveData.interestRate },
+                            { label: "Term",               value: liveData.term },
+                            { label: "Monthly Payment",    value: liveData.monthlyPayment },
                         ]}
                     />
 
@@ -194,8 +247,7 @@ export default function CustomerResponsePage() {
                 </form>
             </main>
 
-            {showToast && <SuccessToast applicationId={mockData.displayId} onClose={() => setShowToast(false)} />}
+            {showToast && <SuccessToast applicationId={liveData.displayId} onClose={() => setShowToast(false)} />}
         </div>
     )
 }
-

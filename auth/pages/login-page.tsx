@@ -2,26 +2,26 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ShieldCheck, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Button } from "@/shared/components/ui/button"
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("")
+    const router = useRouter()
+    const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
-    const [emailError, setEmailError] = useState("")
+    const [usernameError, setUsernameError] = useState("")
     const [passwordError, setPasswordError] = useState("")
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const [isValid, setIsValid] = useState(false)
 
-    // Format validation logic for email
-    const validateEmail = (value: string) => {
-        if (!value) return "Email is required"
-        const isFormatOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-        if (!isFormatOk) return "Please enter a valid email address"
+    // Format validation logic for username
+    const validateUsername = (value: string) => {
+        if (!value) return "Username is required"
         return ""
     }
 
@@ -34,39 +34,62 @@ export default function LoginPage() {
 
     // Check valid status on typing
     useEffect(() => {
-        const isEmailOk = validateEmail(email) === ""
+        const isUsernameOk = validateUsername(username) === ""
         const isPasswordOk = validatePassword(password) === ""
-        setIsValid(isEmailOk && isPasswordOk)
-    }, [email, password])
+        setIsValid(isUsernameOk && isPasswordOk)
+    }, [username, password])
 
     // Handle blurs for individual field validation feedback
-    const handleEmailBlur = () => setEmailError(validateEmail(email))
+    const handleUsernameBlur = () => setUsernameError(validateUsername(username))
     const handlePasswordBlur = () => setPasswordError(validatePassword(password))
+
+    const loginUser = async () => {
+        setIsSubmitting(true)
+        setIsSuccess(false)
+        try {
+            const response = await fetch("http://localhost:8081/user/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                })
+            })
+            const data = await response.json()
+
+            if (data.code === "200") {
+                localStorage.setItem("token", data.data.token)
+                localStorage.setItem("username", username)
+                setIsSuccess(true)
+                router.push("/dashboard")
+            } else {
+                alert(data.message)
+            }
+        } catch (error: any) {
+            console.error("Login failed:", error)
+            alert("An error occurred: " + (error?.message || "Unknown error") + ". Please check console for details.")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         // Final check before submission
-        const eError = validateEmail(email)
+        const uError = validateUsername(username)
         const pError = validatePassword(password)
-        setEmailError(eError)
+        setUsernameError(uError)
         setPasswordError(pError)
 
-        if (eError || pError) {
+        if (uError || pError) {
             setIsValid(false)
             return
         }
 
-        setIsSubmitting(true)
-
-        // Simulating API loading request
-        setTimeout(() => {
-            setIsSubmitting(false)
-            setIsSuccess(true)
-
-            // Simulate redirection / clearing state
-            setTimeout(() => setIsSuccess(false), 2500)
-        }, 1500)
+        loginUser()
     }
 
     return (
@@ -136,21 +159,21 @@ export default function LoginPage() {
 
                     <form className="space-y-6" onSubmit={handleSubmit} noValidate>
                         <div className="space-y-1.5 group">
-                            <Label htmlFor="email">Email Address</Label>
+                            <Label htmlFor="username">Username</Label>
                             <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="Ex. jane@company.com"
-                                autoComplete="email"
+                                id="username"
+                                name="username"
+                                type="text"
+                                placeholder="Ex. janedoe"
+                                autoComplete="username"
                                 required
-                                value={email}
+                                value={username}
                                 onChange={(e) => {
-                                    setEmail(e.target.value)
-                                    if (emailError) setEmailError("")
+                                    setUsername(e.target.value)
+                                    if (usernameError) setUsernameError("")
                                 }}
-                                onBlur={handleEmailBlur}
-                                error={emailError}
+                                onBlur={handleUsernameBlur}
+                                error={usernameError}
                                 disabled={isSubmitting || isSuccess}
                             />
                         </div>

@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState } from "react"
-import { Sidebar } from "./sidebar"
+import { Sidebar, ProfileData } from "./sidebar"
 import { Header } from "./header"
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+export function DashboardLayout({ children, profile }: { children: React.ReactNode; profile?: ProfileData | null }) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
     const toggleSidebar = () => {
@@ -16,6 +16,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {/* Sidebar gets the shared state */}
             <Sidebar
                 isCollapsed={isSidebarCollapsed}
+                profile={profile ?? null}
                 className="shadow-2xl shadow-slate-900/10 z-20 flex-shrink-0"
             />
 
