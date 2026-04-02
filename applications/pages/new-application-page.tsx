@@ -41,6 +41,7 @@ export default function NewApplicationPage() {
 
     // Step state: 1 | 2 | "processing"
     const [step, setStep] = useState<1 | 2 | "processing">(1)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const [customerErrors, setCustomerErrors] = useState<Partial<Record<keyof CustomerDetails, string>>>({})
     const [loanErrors, setLoanErrors] = useState<Partial<Record<keyof LoanDetails, string>>>({})
@@ -76,6 +77,7 @@ export default function NewApplicationPage() {
             const errors = validateLoan(loanData)
             setLoanErrors(errors)
             if (Object.keys(errors).length > 0) return
+            setIsSubmitting(true)   // Prevent rapid double-clicks
             setStep("processing")
         }
     }
@@ -149,7 +151,8 @@ export default function NewApplicationPage() {
                             <Button
                                 type="button"
                                 onClick={goNext}
-                                className="h-11 px-6 text-[0.925rem] shadow-lg shadow-blue-500/20 group"
+                                disabled={isSubmitting}
+                                className="h-11 px-6 text-[0.925rem] shadow-lg shadow-blue-500/20 group disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {step === 1 ? (
                                     <>Next <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" /></>

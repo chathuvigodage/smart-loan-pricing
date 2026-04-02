@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Shield, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLoanApplication } from "@/context/loan-application-context"
@@ -14,13 +14,10 @@ const MESSAGES = [
     "Finalizing best-fit loan offer...",
 ]
 
-// Map employment type labels → backend enum values
-// (new dropdown values already match what the backend expects)
 function mapEmploymentStatus(employmentType: string): string {
     return employmentType ?? ""
 }
 
-// Parse "36 Months" → 36
 function parseLoanDuration(duration: string): number {
     return parseInt(duration, 10) || 12
 }
@@ -33,36 +30,56 @@ export function ProcessingScreen() {
     const [msgIndex, setMsgIndex] = useState(0)
     const [error, setError] = useState<string | null>(null)
 
+    // ── Effect 1: Animation timers (safe to restart on Strict Mode remount) ────
     useEffect(() => {
-        // Progress bar simulation (slows near 90% awaiting real API)
         const progressTimer = setInterval(() => {
             setProgress(p => {
                 if (p >= 90) { clearInterval(progressTimer); return 90 }
-                const step = p < 70 ? 2 : 0.5
-                return Math.min(p + step, 90)
+                return Math.min(p + (p < 70 ? 2 : 0.5), 90)
             })
         }, 60)
 
-        // Cycling messages
         const msgTimer = setInterval(() => {
             setMsgIndex(i => (i + 1) % MESSAGES.length)
         }, 1800)
 
-        // ── BUILD REQUEST PAYLOAD ──────────────────────────────────────────────
+        return () => {
+            clearInterval(progressTimer)
+            clearInterval(msgTimer)
+        }
+    }, [])
+
+    // ── Effect 2: API call — fires exactly once ────────────────────────────────
+    //
+    // React Strict Mode (active in Next.js dev) intentionally mounts → unmounts
+    // → remounts every component. This would normally fire the fetch twice.
+    //
+    // Fix: useRef guard checked inside the effect. Because React 18 Strict Mode
+    // PRESERVES state and refs across the fake unmount/remount cycle, this ref
+    // keeps its value (true) when the effect runs a second time, blocking it.
+    //
+    // IMPORTANT: We do NOT use AbortController here. If we did, the cleanup on
+    // the fake unmount would abort the in-flight request, and the guard would
+    // block the second call — resulting in zero successful API calls.
+    const hasFired = useRef(false)
+
+    useEffect(() => {
+        if (hasFired.current) return   // Block the Strict Mode second invocation
+        hasFired.current = true
+
+        // ── BUILD PAYLOAD ──────────────────────────────────────────────────────
         const rateTiers = [
             loanData.rateTier1,
             loanData.rateTier2,
             loanData.rateTier3,
             loanData.rateTier4,
         ]
-            .map(r => parseFloat(r ?? "0"))  // send as-is — no /100 conversion
+            .map(r => parseFloat(r ?? "0"))
             .filter(r => !isNaN(r) && r > 0)
 
         const payload = {
             name: customerData.fullName ?? "",
-            loanAmount: parseFloat(customerData.annualIncome ?? "0") > 0
-                ? parseFloat(loanData.requestedAmount ?? "0")
-                : parseFloat(loanData.requestedAmount ?? "0"),
+            loanAmount: parseFloat(loanData.requestedAmount ?? "0"),
             loanDuration: parseLoanDuration(loanData.loanDuration ?? "12 Months"),
             totalDebtToIncomeRatio: parseFloat(loanData.dtiRatio ?? "0") / 100,
             creditScore: parseInt(loanData.ficoScore ?? "0", 10),
@@ -92,36 +109,30 @@ export function ProcessingScreen() {
             body: JSON.stringify(payload),
         })
             .then(async res => {
-                // Accept non-2xx HTTP status too — the backend encodes status in body
+                // Accept non-2xx HTTP status — the backend encodes status in body
                 const json = await res.json()
                 return json
             })
             .then(json => {
-                clearInterval(progressTimer)
-                clearInterval(msgTimer)
                 setProgress(100)
-
                 if (json.code === "200") {
                     setLoanResult(json.data)
                     setApiMessage(json.message ?? "")
-                    // Brief pause so the 100% progress is visible before navigating
                     setTimeout(() => router.push("/result"), 600)
                 } else {
                     setError(json.message ?? "An unexpected error occurred. Please try again.")
                 }
             })
             .catch(() => {
-                clearInterval(progressTimer)
-                clearInterval(msgTimer)
                 setError(
                     "Something went wrong while submitting the loan application. Please try again."
                 )
             })
 
-        return () => {
-            clearInterval(progressTimer)
-            clearInterval(msgTimer)
-        }
+        // No cleanup for the fetch — no AbortController.
+        // If we aborted on cleanup, Strict Mode's fake-unmount cleanup would kill
+        // the in-flight request, and the guard would prevent a second call,
+        // resulting in zero successful API calls.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -129,7 +140,6 @@ export function ProcessingScreen() {
     if (error) {
         return (
             <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8F9FB] px-4">
-                {/* Brand Bar */}
                 <div className="absolute top-0 left-0 right-0 flex items-center gap-2.5 px-8 py-6">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#0A66C2] to-[#004182] shadow-md">
                         <Shield className="h-4 w-4 text-white" strokeWidth={2.5} />
@@ -157,7 +167,6 @@ export function ProcessingScreen() {
     // ── LOADING STATE ──────────────────────────────────────────────────────────
     return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8F9FB] px-4">
-            {/* Top Brand Bar */}
             <div className="absolute top-0 left-0 right-0 flex items-center gap-2.5 px-8 py-6">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#0A66C2] to-[#004182] shadow-md">
                     <Shield className="h-4 w-4 text-white" strokeWidth={2.5} />
@@ -165,9 +174,7 @@ export function ProcessingScreen() {
                 <span className="text-lg font-bold tracking-tight text-slate-800">HyperLoan</span>
             </div>
 
-            {/* Content */}
             <div className="flex flex-col items-center text-center max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Animated Spinner */}
                 <div className="relative mb-10">
                     <div className="h-20 w-20 rounded-full border-4 border-slate-200 border-t-[#0A66C2] animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -183,7 +190,6 @@ export function ProcessingScreen() {
                     This will only take a moment. We&apos;re analyzing multiple scenarios to find the best possible loan terms for you.
                 </p>
 
-                {/* Progress Section */}
                 <div className="mt-10 w-full max-w-sm space-y-3">
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
                         <span key={msgIndex} className="animate-in fade-in duration-500 text-left">{MESSAGES[msgIndex]}</span>
@@ -199,7 +205,6 @@ export function ProcessingScreen() {
                 </div>
             </div>
 
-            {/* Footer */}
             <div className="absolute bottom-6 text-sm font-medium text-slate-400">
                 &copy; {new Date().getFullYear()} HyperLoan Inc. All rights reserved.
             </div>
